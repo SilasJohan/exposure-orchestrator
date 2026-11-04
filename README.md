@@ -52,31 +52,76 @@ compose` for you and then waits until Juice Shop answers on port 3000.
 > copy of the lab instead of the bundled one:
 > `LAB_COMPOSE=/path/to/lagoasoft-security-research/lab/compose.lab.yaml ./run.sh lab up`
 
-## Everyday use
+## Short commands (recommended)
+
+Install a one-word `exposure` command once:
 
 ```bash
-./run.sh lab up                  # start the lab (waits for Juice Shop to boot)
-./run.sh list                    # list customer configs + their targets
-./run.sh scan example-lab        # scan, diff vs last run, print the report
-./run.sh lab down                # stop the lab
+./run.sh install     # creates ~/.local/bin/exposure -> run.sh
 ```
 
-A config argument can be a bare name (`example-lab`) or a path
-(`configs/example-lab.yaml`). Run `scan` twice to see findings move from NEW to
-OPEN, and to FIXED after two clean runs.
-
-### Add a new target (no code changes)
+Then, from anywhere:
 
 ```bash
-./run.sh new acme               # creates configs/acme.yaml from a template
-$EDITOR configs/acme.yaml        # set targets, contract, approval, tier, rate
-./run.sh validate acme          # check it is safe to run
-./run.sh scan acme
+exposure up                 # start the lab (waits for Juice Shop to boot)
+exposure scan               # scan the example lab, diff, print the report
+exposure down               # stop the lab
 ```
 
-For the local lab, also add the name to `configs/lab-resolution.yaml` so the
-tool knows which loopback port it maps to. In production this mapping is real
-DNS, not a file.
+Every short command just redirects to a longer one:
+
+| Short            | Same as              |
+|------------------|----------------------|
+| `exposure up`    | `exposure lab up`    |
+| `exposure down`  | `exposure lab down`  |
+| `exposure status`| `exposure lab status`|
+| `exposure scan`  | `exposure scan example-lab` |
+
+If you don't install it, use `./run.sh <command>` instead of `exposure <command>`
+— they are identical.
+
+Run `scan` twice to see findings move from NEW to OPEN, and to FIXED after two
+clean runs.
+
+## Customize the target (one file, no code changes)
+
+```bash
+exposure new acme            # creates configs/acme.yaml you can edit
+$EDITOR configs/acme.yaml    # set targets, contract, approval, tier, rate
+exposure validate acme       # check it is safe to run
+exposure scan acme
+```
+
+A customer config holds **both** what to scan and, for a local lab target, where
+it lives — in one file:
+
+```yaml
+targets:
+  - myapp.lab
+resolution:                              # only needed for LOCAL lab targets
+  myapp.lab: { addr: 127.0.0.1, port: 8080, scheme: http }
+```
+
+So to point at your own local app, set `targets` and `resolution` and run
+`exposure scan <name>`. In production the `resolution` block is left out and the
+name comes from real DNS. The target must resolve to `127.0.0.1` or the run is
+refused (test-build safety).
+
+## Viewing the TLS lab targets in a browser
+
+`secure.lab` (`https://127.0.0.1:8443`) and `weak.lab` (`https://127.0.0.1:8444`)
+serve HTTPS with **self-signed** certificates and only return a one-line text
+response — they are scan targets, not real websites. So:
+
+- You must use `https://` (not `http://`) on ports 8443/8444.
+- The browser shows a "Your connection is not private" warning because the cert
+  is self-signed. That is expected — click Advanced → Proceed, or use
+  `curl -k https://127.0.0.1:8443`.
+- `weak.lab` uses a 1024-bit key on purpose; modern browsers may refuse it
+  outright (SSL error). That is the point — it is a deliberately weak server.
+  The scanner reads it fine via openssl regardless.
+
+None of this is a problem with your network.
 
 ## The five commands
 

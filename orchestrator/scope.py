@@ -43,6 +43,7 @@ class CustomerConfig:
     include_subdomains: bool = False
     shared_infrastructure_acknowledged: bool = False
     max_requests_per_second: int = 5
+    resolution: dict = field(default_factory=dict)  # optional per-config lab endpoints
     raw: dict = field(default_factory=dict)
 
 
@@ -71,6 +72,7 @@ def _parse(data: dict) -> CustomerConfig:
             data.get("shared_infrastructure_acknowledged", False)
         ),
         max_requests_per_second=int(data.get("max_requests_per_second", 5)),
+        resolution=dict(data.get("resolution") or {}),
         raw=data,
     )
 

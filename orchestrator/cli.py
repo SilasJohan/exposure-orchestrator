@@ -42,8 +42,15 @@ valid_until: {valid_until}
 contact: "[security contact]"
 tier: 1
 schedule: weekly
+
+# The hosts to scan. For a LOCAL lab target, also give its address under
+# `resolution` below (host -> loopback addr/port/scheme). In production this
+# mapping comes from real DNS and `resolution` is left out.
 targets:
-  - example.lab
+  - myapp.lab
+resolution:
+  myapp.lab: {{ addr: 127.0.0.1, port: 8080, scheme: http }}
+
 include_subdomains: false
 shared_infrastructure_acknowledged: false
 exclude: []
@@ -59,6 +66,13 @@ def _resolve_config(arg: str) -> str:
         if os.path.isfile(cand):
             return cand
     raise scope.ScopeError(f"config not found: {arg!r} (looked in {CONFIG_DIR})")
+
+
+def _table(args, cfg: scope.CustomerConfig) -> dict:
+    """Lab resolution = the shared file, overridden by the config's own block."""
+    table = lab.load_resolution(args.resolution)
+    table.update(lab.parse_resolution(cfg.resolution))
+    return table
 
 
 # --------------------------------------------------------------------------- #
@@ -151,7 +165,7 @@ def cmd_plan(args) -> int:
         for p in problems:
             print(f"  - {p}")
         return 1
-    table = lab.load_resolution(args.resolution)
+    table = _table(args, cfg)
     scoped = scope.scope_targets(cfg)
     print(f"Customer: {cfg.customer}  tier={cfg.tier}  rps={cfg.max_requests_per_second}")
     print(f"Declared: {', '.join(cfg.targets)}   Excluded: {', '.join(cfg.exclude) or '(none)'}")
@@ -182,7 +196,7 @@ def cmd_scan(args) -> int:
             print(f"  - {p}")
         return 1
 
-    table = lab.load_resolution(args.resolution)
+    table = _table(args, cfg)
     endpoints = []
     for host in scope.scope_targets(cfg):
         ep = lab.resolve(host, table)
@@ -231,9 +245,15 @@ def main(argv=None) -> int:
     p.add_argument("--results-dir", default=DEFAULT_RESULTS)
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    # full form:  lab up | lab down | lab status
     sp = sub.add_parser("lab", help="start/stop the lab")
     sp.add_argument("action", choices=["up", "down", "status"])
     sp.set_defaults(func=cmd_lab)
+
+    # short forms:  up | down | status   (redirect to the lab actions)
+    for short in ("up", "down", "status"):
+        sub.add_parser(short, help=f"shortcut for 'lab {short}'").set_defaults(
+            func=cmd_lab, action=short)
 
     sub.add_parser("list", help="list customer configs").set_defaults(func=cmd_list)
 
@@ -241,9 +261,10 @@ def main(argv=None) -> int:
     sp.add_argument("name")
     sp.set_defaults(func=cmd_new)
 
+    # config argument is optional; defaults to the example lab customer.
     for name, fn in (("validate", cmd_validate), ("plan", cmd_plan), ("scan", cmd_scan)):
-        sp = sub.add_parser(name)
-        sp.add_argument("config")
+        sp = sub.add_parser(name, help=f"{name} a customer config (default: example-lab)")
+        sp.add_argument("config", nargs="?", default="example-lab")
         sp.set_defaults(func=fn)
 
     args = p.parse_args(argv)

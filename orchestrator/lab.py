@@ -25,11 +25,9 @@ class Endpoint:
     scheme: str        # http | https
 
 
-def load_resolution(path: str) -> dict[str, Endpoint]:
-    with open(path, "r", encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
+def parse_resolution(data: dict) -> dict[str, Endpoint]:
     out: dict[str, Endpoint] = {}
-    for host, spec in data.items():
+    for host, spec in (data or {}).items():
         out[host] = Endpoint(
             host=host,
             addr=str(spec["addr"]),
@@ -37,6 +35,12 @@ def load_resolution(path: str) -> dict[str, Endpoint]:
             scheme=str(spec.get("scheme", "http")),
         )
     return out
+
+
+def load_resolution(path: str) -> dict[str, Endpoint]:
+    with open(path, "r", encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    return parse_resolution(data)
 
 
 def resolve(host: str, table: dict[str, Endpoint]) -> Endpoint:
