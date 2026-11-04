@@ -24,15 +24,28 @@ if [ "${1:-}" = "install" ]; then
     exit 0
 fi
 
+deps_ok() { ./.venv/bin/python -c 'import yaml' 2>/dev/null; }
+
+setup_venv() {
+    # Some pythons create a venv without pip; ensurepip bootstraps it. We use
+    # `python -m pip` (not the pip script, which may be missing).
+    ./.venv/bin/python -m ensurepip --upgrade >/dev/null 2>&1 || true
+    ./.venv/bin/python -m pip install -q -r requirements.txt
+}
+
 if [ ! -x .venv/bin/python ]; then
     echo "[setup] creating venv..."
     python3 -m venv .venv
 fi
-# Self-heal: (re)install deps whenever a required module is missing, so a
-# half-built venv from an interrupted first run fixes itself.
-if ! ./.venv/bin/python -c 'import yaml' 2>/dev/null; then
+# Self-heal: if deps are missing, install them; if that still fails (e.g. a
+# venv built without pip), rebuild the venv from scratch once.
+if ! deps_ok; then
     echo "[setup] installing dependencies..."
-    ./.venv/bin/pip install -q -r requirements.txt
+    setup_venv || true
+    if ! deps_ok; then
+        echo "[setup] rebuilding venv..."
+        rm -rf .venv && python3 -m venv .venv && setup_venv
+    fi
 fi
 
 exec ./.venv/bin/python -m orchestrator "$@"
