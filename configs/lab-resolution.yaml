@@ -1,0 +1,8 @@
+# Local lab name resolution (test aid only; production uses real DNS + egress gate).
+# out-of-scope.lab is listed so the tool *could* reach it — the scope gate is
+# what keeps it untouched. That is the point of the decoy.
+juiceshop.lab:    { addr: 127.0.0.1, port: 3000, scheme: http }
+vulnerable.lab:   { addr: 127.0.0.1, port: 8081, scheme: http }
+secure.lab:       { addr: 127.0.0.1, port: 8443, scheme: https }
+weak.lab:         { addr: 127.0.0.1, port: 8444, scheme: https }
+out-of-scope.lab: { addr: 127.0.0.1, port: 8099, scheme: http }

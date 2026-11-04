@@ -1,0 +1,5 @@
+-- PLANTED FAKE backup dump for the exposure lab. No real data.
+-- Simulates an exposed database backup reachable at /backup.sql.bak
+CREATE TABLE users (id INT, email TEXT, password_hash TEXT);
+INSERT INTO users VALUES (1, 'alice@example.lab', 'FAKE_HASH_NOT_REAL');
+INSERT INTO users VALUES (2, 'bob@example.lab',   'FAKE_HASH_NOT_REAL');

@@ -1,0 +1,6 @@
+{
+  "_comment": "PLANTED FAKE config — not real secrets.",
+  "service": "vulnerable-app",
+  "api_key": "FAKE-API-KEY-0000-NOT-REAL",
+  "db": { "host": "db.internal.example.lab", "user": "labuser", "password": "FAKE_LAB_PASSWORD_DO_NOT_USE" }
+}

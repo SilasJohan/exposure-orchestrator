@@ -1,0 +1,16 @@
+# Invalid on purpose: expired contract, a wildcard target, rate over cap, and a
+# tier that needs approval. Used to show the gate refusing to run.
+customer: bad-demo
+contract: "[contract reference]"
+approved_by: "Someone"
+valid_until: 2020-01-01
+contact: "x@x"
+tier: 2
+schedule: weekly
+targets:
+  - "*.example.com"
+  - vulnerable.lab
+include_subdomains: false
+exclude:
+  - somewhere-else.lab
+max_requests_per_second: 999

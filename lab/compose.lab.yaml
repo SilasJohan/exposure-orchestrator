@@ -1,0 +1,75 @@
+# Lagoasoft exposure lab — intentionally weak targets with known answers.
+#
+# SAFETY:
+#   - Every port is published ONLY on 127.0.0.1 (never a public interface).
+#   - Targets share one isolated bridge network.
+#   - All secrets below are PLANTED FAKES for detection practice (see LAB.md).
+#
+# Usage:
+#   docker compose -f lab/compose.lab.yaml up -d --build
+#   docker compose -f lab/compose.lab.yaml down -v
+#
+# Images are pinned by tag AND digest (lab rule 4: write down versions).
+name: lagoa-exposure-lab
+
+x-nginx: &nginx
+  image: nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+
+networks:
+  labnet:
+    driver: bridge
+
+services:
+  # Real-world app: OWASP Juice Shop. Rich, realistic target (exposed /ftp
+  # download dir, info-disclosure headers, missing CSP, Express/Node stack).
+  juice-shop:
+    image: bkimminich/juice-shop:v17.1.1@sha256:9e437b456e444ff001d1663e4f6f05c796fe02f1058dd2651d6791a15b43dfeb
+    container_name: lab-juice-shop
+    networks: [labnet]
+    ports: ["127.0.0.1:3000:3000"]
+
+  # Static target: deterministic web exposures (no security headers, dir
+  # listing, exposed .git/.env/backup/config/.htpasswd, version banner).
+  vuln-web:
+    <<: *nginx
+    container_name: lab-vuln-web
+    networks: [labnet]
+    ports: ["127.0.0.1:8081:80"]
+    volumes:
+      - ./targets/vuln-web/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./targets/vuln-web/docroot:/seed-docroot:ro
+      - ./targets/vuln-web/seed:/seed:ro
+      - ./targets/vuln-web/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+
+  # TLS target, GOOD settings: RSA-2048, long validity, TLS 1.2/1.3, strong ciphers.
+  good-tls:
+    <<: *nginx
+    container_name: lab-good-tls
+    networks: [labnet]
+    ports: ["127.0.0.1:8443:443"]
+    environment: { MODE: good, CN: secure.lab }
+    volumes:
+      - ./targets/tls/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+
+  # TLS target, BAD settings: self-signed RSA-1024, near expiry, SECLEVEL 0.
+  bad-tls:
+    <<: *nginx
+    container_name: lab-bad-tls
+    networks: [labnet]
+    ports: ["127.0.0.1:8444:443"]
+    environment: { MODE: bad, CN: weak.lab }
+    volumes:
+      - ./targets/tls/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+
+  # Decoy: reachable but NEVER in a customer config. Used to prove the scope
+  # gate never touches an undeclared host — its access log must stay empty.
+  decoy:
+    <<: *nginx
+    container_name: lab-decoy
+    networks: [labnet]
+    ports: ["127.0.0.1:8099:80"]
+    volumes:
+      - ./targets/decoy/index.html:/usr/share/nginx/html/index.html:ro

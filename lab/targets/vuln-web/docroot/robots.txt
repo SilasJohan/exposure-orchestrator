@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /backup.sql.bak
+Disallow: /.git/
+Disallow: /.env

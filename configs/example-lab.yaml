@@ -1,0 +1,19 @@
+# Fake customer config pointed at the lab. Same format as the repo's
+# configs/examples/example-customer.yaml, with fields filled so it passes
+# validation. Lab targets only.
+customer: lab-gmbh
+contract: "LAB-2026-001"
+approved_by: "Silas (lab owner)"
+valid_until: 2027-06-30
+contact: "silas@lab.local"
+tier: 1
+schedule: weekly
+targets:
+  - juiceshop.lab
+  - vulnerable.lab
+  - secure.lab
+  - weak.lab
+include_subdomains: false
+shared_infrastructure_acknowledged: false
+exclude: []
+max_requests_per_second: 20

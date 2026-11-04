@@ -1,0 +1,7 @@
+# PLANTED FAKE FILE — not a real secret. Values are obvious placeholders.
+APP_ENV=production
+APP_DEBUG=true
+DB_HOST=db.internal.example.lab
+DB_USER=labuser
+DB_PASSWORD=FAKE_LAB_PASSWORD_DO_NOT_USE
+API_TOKEN=FAKE-LAB-TOKEN-0000-NOT-A-REAL-CREDENTIAL
