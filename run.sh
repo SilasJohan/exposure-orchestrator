@@ -7,7 +7,9 @@
 #   ./run.sh down                    # stop the lab         (= lab down)
 #   ./run.sh install                 # install an `exposure` command on PATH
 set -euo pipefail
-cd "$(dirname "$0")"
+# Resolve through the symlink so `exposure` (in ~/.local/bin) still finds the
+# repo, not the symlink's directory.
+cd "$(dirname "$(readlink -f "$0")")"
 
 # `install`: drop a short launcher in ~/.local/bin so you can type
 #   exposure up / exposure scan / exposure down   (instead of ./run.sh ...)
