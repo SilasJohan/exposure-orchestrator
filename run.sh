@@ -24,9 +24,14 @@ if [ "${1:-}" = "install" ]; then
     exit 0
 fi
 
-if [ ! -d .venv ]; then
-    echo "[setup] creating venv + installing deps..."
+if [ ! -x .venv/bin/python ]; then
+    echo "[setup] creating venv..."
     python3 -m venv .venv
+fi
+# Self-heal: (re)install deps whenever a required module is missing, so a
+# half-built venv from an interrupted first run fixes itself.
+if ! ./.venv/bin/python -c 'import yaml' 2>/dev/null; then
+    echo "[setup] installing dependencies..."
     ./.venv/bin/pip install -q -r requirements.txt
 fi
 
